@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Гормональный вызов</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f8ff;
+      padding: 20px;
+      max-width: 700px;
+      margin: auto;
+    }
+    h1 {
+      color: #006064;
+    }
+    .question {
+      font-size: 1.2em;
+      margin-bottom: 10px;
+    }
+    .option {
+      display: block;
+      margin: 8px 0;
+      padding: 10px;
+      background: #e0f7fa;
+      border: 1px solid #0097a7;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .option:hover {
+      background: #b2ebf2;
+    }
+    .feedback {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    #nextBtn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #00796b;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #nextBtn:hover {
+      background: #004d40;
+    }
+    #score, #timer {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    #levelSelect {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧠 Гормональный вызов</h1>
+  <label for="levelSelect">Выберите уровень сложности:</label>
+  <select id="levelSelect">
+    <option value="easy">Лёгкий</option>
+    <option value="medium">Средний</option>
+    <option value="hard">Сложный</option>
+  </select>
+  <button onclick="startGame()">Начать игру</button>
+
+  <div id="quiz" style="display:none;">
+    <div id="score">Баллы: 0</div>
+    <div id="timer">Время: 15</div>
+    <div class="question" id="question"></div>
+    <div id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <button id="nextBtn" onclick="nextQuestion()" style="display:none;">Следующий вопрос</button>
+  </div>
+
+  <script>
+    const allQuestions = {
+      easy: [
+        { question: "Какой гормон выделяется при испуге?", options: ["Инсулин", "Адреналин", "Тироксин", "Эстроген"], answer: 1 },
+        { question: "Какой гормон регулирует уровень сахара?", options: ["Инсулин", "Кортизол", "Тестостерон", "Пролактин"], answer: 0 },
+        { question: "Где вырабатывается инсулин?", options: ["Гипофиз", "Поджелудочная железа", "Надпочечники", "Щитовидная железа"], answer: 1 },
+        { question: "Какой гормон отвечает за половое развитие у мужчин?", options: ["Эстроген", "Тестостерон", "Прогестерон", "Окситоцин"], answer: 1 },
+        { question: "Какой гормон способствует выработке молока у женщин?", options: ["Пролактин", "Адреналин", "Инсулин", "Тироксин"], answer: 0 }
+      ],
+      medium: [
+        { question: "Где вырабатывается тироксин?", options: ["Гипофиз", "Щитовидная железа", "Надпочечники", "Поджелудочная"], answer: 1 },
+        { question: "Какой гормон стимулирует рост костей и мышц?", options: ["Соматотропин", "Окситоцин", "Прогестерон", "Глюкагон"], answer: 0 },
+        { question: "Какой гормон повышает уровень глюкозы в крови?", options: ["Инсулин", "Глюкагон", "Тестостерон", "Эстроген"], answer: 1 },
+        { question: "Какой гормон регулирует обмен веществ?", options: ["Тироксин", "Пролактин", "Кортизол", "Окситоцин"], answer: 0 },
+        { question: "Какой гормон вырабатывается гипофизом?", options: ["Соматотропин", "Инсулин", "Тироксин", "Адреналин"], answer: 0 }
+      ],
+      hard: [
+        { question: "Какой гормон участвует в регуляции водно-солевого обмена?", options: ["Альдостерон", "Тестостерон", "Инсулин", "Тироксин"], answer: 0 },
+        { question: "Какой гормон отвечает за сокращение матки при родах?", options: ["Окситоцин", "Эстроген", "Пролактин", "Кортизол"], answer: 0 },
+        { question: "Какой гормон повышает артериальное давление и уровень глюкозы?", options: ["Кортизол", "Инсулин", "Тироксин", "Прогестерон"], answer: 0 },
+        { question: "Какой гормон регулирует менструальный цикл?", options: ["Прогестерон", "Тестостерон", "Глюкагон", "Соматотропин"], answer: 0 },
+        { question: "Какой гормон вырабатывается надпочечниками?", options: ["Адреналин", "Инсулин", "Тироксин", "Пролактин"], answer: 0 }
+      ]
+    };
+
+    let selectedLevelQuestions = [];
+    let current = 0;
+    let score = 0;
+    let timer;
+    let timeLeft = 15;
+
+    function startGame() {
+      const level = document.getElementById("levelSelect").value;
+      const fullSet = [...allQuestions[level]];
+      selectedLevelQuestions = fullSet.sort(() => Math.random() - 0.5).slice(0, 5);
+      current = 0;
+      score = 0;
+      document.getElementById("quiz").style.display = "block";
+      document.getElementById("score").textContent = "Баллы: 0";
+      showQuestion();
+    }
+
+    function showQuestion() {
+      clearInterval(timer);
+      timeLeft = 15;
+      document.getElementById("timer").textContent = "Время: " + timeLeft;
+      timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById("timer").textContent = "Время: " + timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          document.getElementById("feedback").textContent = "⏱️ Время вышло!";
+          document.getElementById("nextBtn").style.display = "inline-block";
+        }
+      }, 1000);
+
+      const q = selectedLevelQuestions[current];
+      document.getElementById("question").textContent = `Вопрос ${current + 1} из 5: ${q.question}`;
+      const optionsDiv = document.getElementById("options");
+      optionsDiv.innerHTML = "";
+      q.options.forEach((opt, i) => {
+        const btn = document.createElement("button");
+        btn.textContent = opt;
+        btn.className = "option";
+        btn.onclick = () => checkAnswer(i);
+        optionsDiv.appendChild(btn);
+      });
+      document.getElementById("feedback").textContent = "";
+      document.getElementById("nextBtn").style.display = "none";
+    }
+
+    function checkAnswer(selected) {
+      clearInterval(timer);
+      const correct = selectedLevelQuestions[current].answer;
+      const feedback = document.getElementById("feedback");
+      if (selected === correct) {
+        score += 10;
+        feedback.textContent = "✅ Верно!";
+        feedback.style.color = "green";
+      } else {
+        feedback.textContent = `❌ Неверно. Правильный ответ: ${selectedLevelQuestions[current].options[correct]}`;
+        feedback.style.color = "red";
+      }
+      document.getElementById("score").textContent = "Баллы: " + score;
+      document.getElementById("nextBtn").style.display = "inline-block";
+    }
+
+    function nextQuestion() {
+      current++;
+      if (current < selectedLevelQuestions.length) {
+        showQuestion();
+      } else {
+        document.getElementById("quiz").innerHTML = `<h2>🎉 Игра завершена! Ваш результат: ${score} баллов из 50</h2>`;
+      }
+    }
+  </script>
+</body>
+</html>
